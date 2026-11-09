@@ -1,15 +1,22 @@
 using eiupdds_backend.Data;
 using eiupdds_backend.Middlewares;
+using eiupdds_backend.Services.Implementations;
+using eiupdds_backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog from appsettings.json
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
+// Configure Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register Application Services
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -17,8 +24,10 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Global exception handling
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// Request logging
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
@@ -26,6 +35,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Serve static files (uploads)
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
