@@ -1,9 +1,12 @@
+using dotenv.net;
 using eiupdds_backend.Data;
 using eiupdds_backend.Middlewares;
 using eiupdds_backend.Services.Implementations;
 using eiupdds_backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
