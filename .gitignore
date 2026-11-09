@@ -16,6 +16,7 @@ logs/
 *.log
 .env
 .env.*
+!.env.example
 wwwroot/uploads/*
 !wwwroot/uploads/.gitkeep
 .DS_Store
