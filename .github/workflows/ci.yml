@@ -1,0 +1,36 @@
+name: EIU PDDS CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+
+      - name: Verify Code Formatting
+        run: dotnet format eiupdds-backend.slnx --verify-no-changes --verbosity normal
+
+      - name: Restore Dependencies
+        run: dotnet restore eiupdds-backend.slnx
+
+      - name: Build Solution (Release)
+        run: dotnet build eiupdds-backend.slnx --configuration Release --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test eiupdds-backend.slnx --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed"
