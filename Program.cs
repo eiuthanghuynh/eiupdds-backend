@@ -1,9 +1,12 @@
+using dotenv.net;
 using eiupdds_backend.Data;
 using eiupdds_backend.Middlewares;
 using eiupdds_backend.Services.Implementations;
 using eiupdds_backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +20,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register Application Services
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
