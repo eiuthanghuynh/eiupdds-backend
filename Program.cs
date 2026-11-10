@@ -20,6 +20,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register Application Services
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

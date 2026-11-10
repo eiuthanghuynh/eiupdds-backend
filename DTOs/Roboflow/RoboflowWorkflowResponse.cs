@@ -2,12 +2,18 @@ using System.Text.Json.Serialization;
 
 namespace eiupdds_backend.DTOs.Roboflow;
 
+/// <summary>
+/// Top-level array element returned by Roboflow Workflow execution.
+/// </summary>
 public class RoboflowWorkflowResponseItem
 {
     [JsonPropertyName("model_output")]
     public RoboflowModelOutput ModelOutput { get; set; } = new();
 }
 
+/// <summary>
+/// Core inference result holding image dimensions and detected disease predictions.
+/// </summary>
 public class RoboflowModelOutput
 {
     [JsonPropertyName("image")]
@@ -17,6 +23,9 @@ public class RoboflowModelOutput
     public List<RoboflowPredictionDetail> Predictions { get; set; } = new();
 }
 
+/// <summary>
+/// Basic dimension metadata of the processed image.
+/// </summary>
 public class RoboflowImageMeta
 {
     [JsonPropertyName("width")]
@@ -26,6 +35,9 @@ public class RoboflowImageMeta
     public int Height { get; set; }
 }
 
+/// <summary>
+/// Bounding box, confidence score, and class identification for a detected leaf or disease.
+/// </summary>
 public class RoboflowPredictionDetail
 {
     [JsonPropertyName("width")]
