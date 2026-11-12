@@ -28,6 +28,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -41,7 +46,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter JWT token  (e.g: eyJhbGciOi...)"
+        Description = "Enter JWT token (e.g: eyJhbGciOi...)"
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
@@ -49,6 +54,7 @@ builder.Services.AddSwaggerGen(options =>
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
+
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
     options.Password.RequireDigit = true;
@@ -58,6 +64,14 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+    ?? builder.Configuration["JwtSettings:SecretKey"];
+
+var signingKeyBytes = !string.IsNullOrWhiteSpace(jwtSecret)
+    ? Encoding.UTF8.GetBytes(jwtSecret)
+    : Encoding.UTF8.GetBytes("DevelopmentFallbackSecretKeyMustBeAtLeast32BytesLong!");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -67,12 +81,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-            .GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "EiupddsBackend",
+            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "EiupddsClient",
+            IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes)
         };
     });
+
 var app = builder.Build();
 
 // Global exception handling

@@ -14,8 +14,10 @@
 *.nupkg
 logs/
 *.log
+*.sql
 .env
 .env.*
+!.env.example
 wwwroot/uploads/*
 !wwwroot/uploads/.gitkeep
 .DS_Store
