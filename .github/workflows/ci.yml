@@ -4,13 +4,25 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
-    name: Build & Test
+    name: Build, Test & Verify Database Integrity
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +34,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Restore .NET Local Tools
+        run: dotnet tool restore
+
       - name: Verify Code Formatting
         run: dotnet format eiupdds-backend.slnx --verify-no-changes --verbosity normal
 
@@ -31,5 +46,19 @@ jobs:
       - name: Build Solution (Release)
         run: dotnet build eiupdds-backend.slnx --configuration Release --no-restore
 
-      - name: Run Unit Tests
+      - name: Run Unit & Model Tests
         run: dotnet test eiupdds-backend.slnx --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed"
+
+      - name: Verify Database Model Integrity (No Pending Changes)
+        run: dotnet ef migrations has-pending-model-changes --project eiupdds-backend.csproj
+
+      - name: Verify Migration Script Generation (Idempotent SQL)
+        run: dotnet ef migrations script --idempotent --project eiupdds-backend.csproj --output migrations.sql
+
+      - name: Upload Migration SQL Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: database-migration-script
+          path: migrations.sql
+          if-no-files-found: ignore
