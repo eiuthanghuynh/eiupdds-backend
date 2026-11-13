@@ -25,9 +25,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register Application Services
+builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
@@ -54,16 +56,6 @@ builder.Services.AddSwaggerGen(options =>
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
-
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
-})
-.AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<ApplicationDbContext>();
 
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
     ?? builder.Configuration["JwtSettings:SecretKey"];
