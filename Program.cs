@@ -29,7 +29,6 @@ builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<Appl
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
