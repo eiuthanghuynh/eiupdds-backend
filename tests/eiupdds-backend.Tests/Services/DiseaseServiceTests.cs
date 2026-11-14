@@ -1,6 +1,5 @@
 using eiupdds_backend.Data;
 using eiupdds_backend.Models;
-using eiupdds_backend.Repositories.Implementations;
 using eiupdds_backend.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -49,7 +48,7 @@ public class DiseaseServiceTests
             });
         await context.SaveChangesAsync();
 
-        var service = new DiseaseService(new DiseaseRepository(context), context);
+        var service = new DiseaseService(context);
 
         var result = await service.GetAllAsync(tomato.Id, search: null);
 

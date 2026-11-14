@@ -3,6 +3,15 @@ using System.Text.Json.Serialization;
 namespace eiupdds_backend.DTOs.Roboflow;
 
 /// <summary>
+/// Root envelope returned by Roboflow serverless workflow execution.
+/// </summary>
+public class RoboflowWorkflowEnvelope
+{
+    [JsonPropertyName("outputs")]
+    public List<RoboflowWorkflowResponseItem> Outputs { get; set; } = new();
+}
+
+/// <summary>
 /// Top-level array element returned by Roboflow Workflow execution.
 /// </summary>
 public class RoboflowWorkflowResponseItem
@@ -29,10 +38,10 @@ public class RoboflowModelOutput
 public class RoboflowImageMeta
 {
     [JsonPropertyName("width")]
-    public int Width { get; set; }
+    public int? Width { get; set; }
 
     [JsonPropertyName("height")]
-    public int Height { get; set; }
+    public int? Height { get; set; }
 }
 
 /// <summary>

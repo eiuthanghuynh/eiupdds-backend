@@ -1,6 +1,5 @@
 using eiupdds_backend.Data;
 using eiupdds_backend.Models;
-using eiupdds_backend.Repositories.Implementations;
 using eiupdds_backend.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -71,7 +70,7 @@ public class PredictionHistoryServiceTests
             });
         await context.SaveChangesAsync();
 
-        var service = new PredictionHistoryService(new PredictionHistoryRepository(context));
+        var service = new PredictionHistoryService(context);
 
         var result = await service.GetHistoryAsync(
             currentUserId,

@@ -1,18 +1,19 @@
+using eiupdds_backend.Data;
 using eiupdds_backend.DTOs.Common;
 using eiupdds_backend.DTOs.Diagnosis;
 using eiupdds_backend.Models;
-using eiupdds_backend.Repositories.Interfaces;
 using eiupdds_backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace eiupdds_backend.Services.Implementations;
 
 public class PredictionHistoryService : IPredictionHistoryService
 {
-    private readonly IPredictionHistoryRepository _historyRepository;
+    private readonly ApplicationDbContext _dbContext;
 
-    public PredictionHistoryService(IPredictionHistoryRepository historyRepository)
+    public PredictionHistoryService(ApplicationDbContext dbContext)
     {
-        _historyRepository = historyRepository;
+        _dbContext = dbContext;
     }
 
     public async Task<PagedResultDto<DiagnosisHistoryListItemDto>> GetHistoryAsync(
@@ -37,12 +38,28 @@ public class PredictionHistoryService : IPredictionHistoryService
             pageSize = 100;
         }
 
-        var (items, totalCount) = await _historyRepository.GetByUserAsync(
-            userId,
-            pageNumber,
-            pageSize,
-            fromDate,
-            toDate);
+        var query = _dbContext.PredictionHistories
+            .AsNoTracking()
+            .Include(h => h.Plant)
+            .Include(h => h.PredictionItems)
+            .Where(h => h.UserId == userId);
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(h => h.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(h => h.CreatedAt <= toDate.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(h => h.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         return new PagedResultDto<DiagnosisHistoryListItemDto>
         {
@@ -55,7 +72,11 @@ public class PredictionHistoryService : IPredictionHistoryService
 
     public async Task<DiagnosisHistoryDetailDto> GetByIdAsync(int id, string userId)
     {
-        var history = await _historyRepository.GetByIdForUserAsync(id, userId)
+        var history = await _dbContext.PredictionHistories
+            .Include(h => h.Plant)
+            .Include(h => h.PredictionItems)
+                .ThenInclude(i => i.Disease)
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId)
             ?? throw new KeyNotFoundException($"Diagnosis history with id '{id}' was not found.");
 
         return MapToDetail(history);
@@ -63,10 +84,12 @@ public class PredictionHistoryService : IPredictionHistoryService
 
     public async Task DeleteAsync(int id, string userId)
     {
-        var history = await _historyRepository.GetByIdForUserAsync(id, userId)
+        var history = await _dbContext.PredictionHistories
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId)
             ?? throw new KeyNotFoundException($"Diagnosis history with id '{id}' was not found.");
 
-        await _historyRepository.DeleteAsync(history);
+        _dbContext.PredictionHistories.Remove(history);
+        await _dbContext.SaveChangesAsync();
     }
 
     private static DiagnosisHistoryListItemDto MapToListItem(PredictionHistory history)

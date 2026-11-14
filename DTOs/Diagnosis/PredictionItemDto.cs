@@ -2,10 +2,26 @@ namespace eiupdds_backend.DTOs.Diagnosis;
 
 public class PredictionItemDto
 {
+    private string? _class;
+
     public int Id { get; set; }
     public int? DiseaseId { get; set; }
     public string? DiseaseName { get; set; }
     public string DetectedClass { get; set; } = string.Empty;
+
+    public string Class
+    {
+        get => string.IsNullOrEmpty(_class) ? DetectedClass : _class;
+        set
+        {
+            _class = value;
+            if (string.IsNullOrEmpty(DetectedClass))
+            {
+                DetectedClass = value;
+            }
+        }
+    }
+
     public int ClassId { get; set; }
     public double Confidence { get; set; }
     public double X { get; set; }

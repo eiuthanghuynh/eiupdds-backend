@@ -22,7 +22,10 @@ public class ApplicationDbContextTests
         using var context = CreateContext();
         var model = context.Model;
 
-        Assert.NotNull(model.FindEntityType(typeof(ApplicationUser)));
+        var userEntity = model.FindEntityType(typeof(ApplicationUser));
+        Assert.NotNull(userEntity);
+        Assert.Equal("Users", userEntity.GetTableName());
+
         Assert.NotNull(model.FindEntityType(typeof(Plant)));
         Assert.NotNull(model.FindEntityType(typeof(Disease)));
         Assert.NotNull(model.FindEntityType(typeof(PredictionHistory)));
@@ -42,6 +45,14 @@ public class ApplicationDbContextTests
             .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Plant));
         Assert.NotNull(plantFk);
         Assert.Equal(DeleteBehavior.Restrict, plantFk.DeleteBehavior);
+
+        // PredictionHistory -> User (SetNull)
+        var historyEntity = model.FindEntityType(typeof(PredictionHistory));
+        Assert.NotNull(historyEntity);
+        var userFk = historyEntity.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(ApplicationUser));
+        Assert.NotNull(userFk);
+        Assert.Equal(DeleteBehavior.SetNull, userFk.DeleteBehavior);
 
         // PredictionItem -> PredictionHistory (Cascade)
         var predictionItemEntity = model.FindEntityType(typeof(PredictionItem));
@@ -63,6 +74,13 @@ public class ApplicationDbContextTests
     {
         using var context = CreateContext();
         var model = context.Model;
+
+        var userEntity = model.FindEntityType(typeof(ApplicationUser));
+        Assert.NotNull(userEntity);
+        var userNameProp = userEntity.FindProperty(nameof(ApplicationUser.FullName));
+        Assert.NotNull(userNameProp);
+        Assert.False(userNameProp.IsNullable);
+        Assert.Equal(100, userNameProp.GetMaxLength());
 
         var plantEntity = model.FindEntityType(typeof(Plant));
         Assert.NotNull(plantEntity);

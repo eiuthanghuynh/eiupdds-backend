@@ -3,8 +3,6 @@ using dotenv.net;
 using eiupdds_backend.Data;
 using eiupdds_backend.Middlewares;
 using eiupdds_backend.Models;
-using eiupdds_backend.Repositories.Implementations;
-using eiupdds_backend.Repositories.Interfaces;
 using eiupdds_backend.Services.Implementations;
 using eiupdds_backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,11 +25,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register Application Services
+builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IDiseaseRepository, DiseaseRepository>();
-builder.Services.AddScoped<IPredictionHistoryRepository, PredictionHistoryRepository>();
+builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddScoped<IDiseaseService, DiseaseService>();
 builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>();
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
@@ -60,16 +58,6 @@ builder.Services.AddSwaggerGen(options =>
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
-
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
-})
-.AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<ApplicationDbContext>();
 
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
     ?? builder.Configuration["JwtSettings:SecretKey"];

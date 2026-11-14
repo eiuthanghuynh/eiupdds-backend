@@ -1,16 +1,16 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using eiupdds_backend.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace eiupdds_backend.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<Plant> Plants => Set<Plant>();
     public DbSet<Disease> Diseases => Set<Disease>();
     public DbSet<PredictionHistory> PredictionHistories => Set<PredictionHistory>();
@@ -20,10 +20,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(builder);
 
+        // Map table name to match ERD
+        builder.Entity<ApplicationUser>().ToTable("Users");
+
+        // Global query filters for soft delete
         builder.Entity<ApplicationUser>().HasQueryFilter(u => u.IsActive);
         builder.Entity<Plant>().HasQueryFilter(p => p.IsActive);
         builder.Entity<Disease>().HasQueryFilter(d => d.IsActive);
 
+        // User configurations
+        builder.Entity<ApplicationUser>(entity =>
+        {
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.FullName).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
+            entity.Property(u => u.PasswordHash).IsRequired();
+            entity.Property(u => u.Role).IsRequired().HasMaxLength(50);
+            entity.HasIndex(u => u.Email).IsUnique();
+        });
+
+        // Relationships
         builder.Entity<Disease>()
             .HasOne(d => d.Plant)
             .WithMany(p => p.Diseases)
@@ -54,6 +70,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(pi => pi.DiseaseId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Property constraints
         builder.Entity<Plant>()
             .Property(p => p.Name)
             .IsRequired()
