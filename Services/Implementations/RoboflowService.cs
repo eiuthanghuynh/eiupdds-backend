@@ -78,18 +78,31 @@ public class RoboflowService : IRoboflowService
             throw new InvalidOperationException("Received empty response payload from Roboflow inference server.");
         }
 
-        List<RoboflowWorkflowResponseItem>? resultItems;
+        RoboflowModelOutput? firstOutput = null;
+
         try
         {
-            resultItems = JsonSerializer.Deserialize<List<RoboflowWorkflowResponseItem>>(responseBody, JsonOptions);
+            var envelope = JsonSerializer.Deserialize<RoboflowWorkflowEnvelope>(responseBody, JsonOptions);
+            firstOutput = envelope?.Outputs?.FirstOrDefault()?.ModelOutput;
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            _logger.LogError(ex, "Failed to parse JSON response from Roboflow: {RawResponse}", responseBody);
-            throw new InvalidOperationException("Failed to deserialize Roboflow workflow response.", ex);
         }
 
-        var firstOutput = resultItems?.FirstOrDefault()?.ModelOutput;
+        if (firstOutput == null)
+        {
+            try
+            {
+                var resultItems = JsonSerializer.Deserialize<List<RoboflowWorkflowResponseItem>>(responseBody, JsonOptions);
+                firstOutput = resultItems?.FirstOrDefault()?.ModelOutput;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to parse JSON response from Roboflow: {RawResponse}", responseBody);
+                throw new InvalidOperationException("Failed to deserialize Roboflow workflow response.", ex);
+            }
+        }
+
         if (firstOutput == null)
         {
             throw new InvalidOperationException("Roboflow response does not contain valid prediction data.");
