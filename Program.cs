@@ -32,6 +32,7 @@ builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<Appl
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserActiveGuard, UserActiveGuard>();
 builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddScoped<IDiseaseService, DiseaseService>();
 builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>();
@@ -136,6 +137,8 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+app.UseMiddleware<ActiveUserMiddleware>();
 
 app.UseAuthorization();
 

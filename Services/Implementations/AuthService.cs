@@ -77,7 +77,7 @@ public class AuthService : IAuthService
             ?? throw new InvalidOperationException("JWT SecretKey is not configured. Please set the JWT_SECRET_KEY environment variable or define JwtSettings:SecretKey in appsettings.");
         var issuer = _configuration["JwtSettings:Issuer"];
         var audience = _configuration["JwtSettings:Audience"];
-        var expiryMinutes = double.TryParse(_configuration["JwtSettings:ExpiryMinutes"], out var minutes) ? minutes : 1440;
+        var expiryMinutes = double.TryParse(_configuration["JwtSettings:ExpiryMinutes"], out var minutes) ? minutes : 15;
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
         var claims = new List<Claim>
