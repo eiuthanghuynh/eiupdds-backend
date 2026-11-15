@@ -24,6 +24,8 @@ jobs:
   build-and-test:
     name: Build, Test & Verify Database Integrity
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET_KEY: "CiPipelineDummySecretKeyMustBeAtLeast32BytesLong!"
 
     steps:
       - name: Checkout Source Code
