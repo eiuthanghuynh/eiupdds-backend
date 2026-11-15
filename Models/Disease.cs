@@ -9,5 +9,4 @@ public class Disease : BaseAuditableEntity
     public string RoboflowLabel { get; set; } = string.Empty;
 
     public Plant Plant { get; set; } = null!;
-    public ICollection<PredictionItem> PredictionItems { get; set; } = new List<PredictionItem>();
 }

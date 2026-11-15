@@ -86,6 +86,15 @@ public class RoboflowServiceTests
             Assert.Equal(556, prediction.Height);
             Assert.Equal(763.5, prediction.X);
             Assert.Equal(636, prediction.Y);
+
+            mockHandler.Protected().Verify(
+                "SendAsync",
+                Times.Once(),
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Headers.Authorization != null &&
+                    req.Headers.Authorization.Scheme == "Bearer" &&
+                    req.Headers.Authorization.Parameter == "mock_roboflow_api_key_valid"),
+                ItExpr.IsAny<CancellationToken>());
         }
         finally
         {
@@ -176,6 +185,59 @@ public class RoboflowServiceTests
             var service = new RoboflowService(httpClient, configuration, mockLogger.Object);
 
             await Assert.ThrowsAsync<HttpRequestException>(() => service.DetectDiseaseAsync(tempFile));
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DetectDiseaseAsync_Transient500ThenSuccess_RetriesAndReturnsOutput()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllBytesAsync(tempFile, new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 });
+
+            var mockHandler = new Mock<HttpMessageHandler>();
+            mockHandler.Protected()
+                .SetupSequence<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent("{\"error\": \"Temporary inference server error\"}", Encoding.UTF8, "application/json")
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(SampleRoboflowSuccessResponseJson, Encoding.UTF8, "application/json")
+                });
+
+            var httpClient = new HttpClient(mockHandler.Object);
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "Roboflow:ApiKey", "valid_key" }
+                })
+                .Build();
+            var mockLogger = new Mock<ILogger<RoboflowService>>();
+
+            var service = new RoboflowService(httpClient, configuration, mockLogger.Object);
+
+            var result = await service.DetectDiseaseAsync(tempFile);
+
+            Assert.NotNull(result);
+            Assert.Single(result.Predictions);
+            mockHandler.Protected().Verify(
+                "SendAsync",
+                Times.Exactly(2),
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>());
         }
         finally
         {

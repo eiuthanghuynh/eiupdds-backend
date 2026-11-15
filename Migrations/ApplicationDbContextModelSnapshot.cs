@@ -206,9 +206,6 @@ namespace eiupdds_backend.Migrations
                     b.Property<string>("DetectionId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("DiseaseId")
-                        .HasColumnType("int");
-
                     b.Property<double>("Height")
                         .HasColumnType("float");
 
@@ -225,8 +222,6 @@ namespace eiupdds_backend.Migrations
                         .HasColumnType("float");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DiseaseId");
 
                     b.HasIndex("PredictionHistoryId");
 
@@ -263,18 +258,11 @@ namespace eiupdds_backend.Migrations
 
             modelBuilder.Entity("eiupdds_backend.Models.PredictionItem", b =>
                 {
-                    b.HasOne("eiupdds_backend.Models.Disease", "Disease")
-                        .WithMany("PredictionItems")
-                        .HasForeignKey("DiseaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("eiupdds_backend.Models.PredictionHistory", "PredictionHistory")
                         .WithMany("PredictionItems")
                         .HasForeignKey("PredictionHistoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Disease");
 
                     b.Navigation("PredictionHistory");
                 });
@@ -282,11 +270,6 @@ namespace eiupdds_backend.Migrations
             modelBuilder.Entity("eiupdds_backend.Models.ApplicationUser", b =>
                 {
                     b.Navigation("PredictionHistories");
-                });
-
-            modelBuilder.Entity("eiupdds_backend.Models.Disease", b =>
-                {
-                    b.Navigation("PredictionItems");
                 });
 
             modelBuilder.Entity("eiupdds_backend.Models.Plant", b =>
