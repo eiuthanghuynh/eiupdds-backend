@@ -64,12 +64,6 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(pi => pi.PredictionHistoryId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<PredictionItem>()
-            .HasOne(pi => pi.Disease)
-            .WithMany(d => d.PredictionItems)
-            .HasForeignKey(pi => pi.DiseaseId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         // Property constraints
         builder.Entity<Plant>()
             .Property(p => p.Name)

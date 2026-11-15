@@ -61,12 +61,6 @@ public class ApplicationDbContextTests
             .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(PredictionHistory));
         Assert.NotNull(historyFk);
         Assert.Equal(DeleteBehavior.Cascade, historyFk.DeleteBehavior);
-
-        // PredictionItem -> Disease (SetNull)
-        var diseaseFk = predictionItemEntity.GetForeignKeys()
-            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Disease));
-        Assert.NotNull(diseaseFk);
-        Assert.Equal(DeleteBehavior.SetNull, diseaseFk.DeleteBehavior);
     }
 
     [Fact]
