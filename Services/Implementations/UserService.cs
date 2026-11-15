@@ -60,12 +60,26 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<bool> SoftDeleteUserAsync(string userId)
+    public async Task<bool> SoftDeleteUserAsync(string userId, string? currentUserId = null)
     {
+        if (!string.IsNullOrEmpty(currentUserId) && userId == currentUserId)
+        {
+            throw new InvalidOperationException("Administrators cannot delete their own account.");
+        }
+
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null || !user.IsActive)
         {
             throw new KeyNotFoundException("User not found or already deactivated.");
+        }
+
+        if (user.Role == "Admin")
+        {
+            var activeAdminCount = await _context.Users.CountAsync(u => u.Role == "Admin" && u.IsActive);
+            if (activeAdminCount <= 1)
+            {
+                throw new InvalidOperationException("Cannot deactivate the only remaining administrator in the system.");
+            }
         }
 
         user.IsActive = false;
