@@ -32,6 +32,7 @@ builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<Appl
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserActiveGuard, UserActiveGuard>();
 builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddScoped<IDiseaseService, DiseaseService>();
 builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>();
@@ -97,9 +98,12 @@ builder.Services.AddSwaggerGen(options =>
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
     ?? builder.Configuration["JwtSettings:SecretKey"];
 
-var signingKeyBytes = !string.IsNullOrWhiteSpace(jwtSecret)
-    ? Encoding.UTF8.GetBytes(jwtSecret)
-    : Encoding.UTF8.GetBytes("DevelopmentFallbackSecretKeyMustBeAtLeast32BytesLong!");
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    throw new InvalidOperationException("JWT SecretKey is not configured. Please set the JWT_SECRET_KEY environment variable or define JwtSettings:SecretKey in appsettings.");
+}
+
+var signingKeyBytes = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -136,6 +140,8 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+app.UseMiddleware<ActiveUserMiddleware>();
 
 app.UseAuthorization();
 

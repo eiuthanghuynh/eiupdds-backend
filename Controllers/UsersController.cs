@@ -40,7 +40,13 @@ namespace eiupdds_backend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> SoftDeleteUser(string id)
         {
-            await _userService.SoftDeleteUserAsync(id);
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            await _userService.SoftDeleteUserAsync(id, currentUserId);
             return Ok(new { message = $"User '{id}' has been deactivated successfully." });
         }
     }
