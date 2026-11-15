@@ -114,7 +114,12 @@ public class DiagnosisServiceTests
         Assert.Equal(relativeUrl, result.ImageUrl);
         Assert.Single(result.Predictions);
 
+        Assert.Equal(1024, result.ImageWidth);
+        Assert.Equal(768, result.ImageHeight);
+        Assert.Equal("Tomato", result.PlantName);
+
         var itemDto = result.Predictions[0];
+        Assert.Equal(1, itemDto.ClassId);
         Assert.Equal("Tomato Early Blight", itemDto.Class);
         Assert.Equal(0.88, itemDto.Confidence);
         Assert.Equal(150.5, itemDto.X);
@@ -215,7 +220,7 @@ public class DiagnosisServiceTests
     }
 
     [Fact]
-    public async Task PredictAsync_KnownDiseaseInDatabase_LinksDiseaseIdAndPlantId()
+    public async Task PredictAsync_KnownDiseaseInDatabase_LinksPlantIdAndSetsPlantName()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
@@ -278,6 +283,9 @@ public class DiagnosisServiceTests
 
         // Assert
         Assert.NotNull(result);
+        Assert.Equal("Potato", result.PlantName);
+        Assert.Equal(13, result.Predictions[0].ClassId);
+
         var savedHistory = await dbContext.PredictionHistories
             .Include(h => h.PredictionItems)
             .FirstOrDefaultAsync(h => h.Id == result.Id);
@@ -287,7 +295,6 @@ public class DiagnosisServiceTests
         Assert.Single(savedHistory.PredictionItems);
 
         var savedItem = savedHistory.PredictionItems.First();
-        Assert.Equal(disease.Id, savedItem.DiseaseId);
         Assert.Equal("Potato leaf late blight", savedItem.DetectedClass);
         Assert.Equal(13, savedItem.ClassId);
     }
@@ -359,7 +366,7 @@ public class DiagnosisServiceTests
     }
 
     [Fact]
-    public async Task PredictAsync_UnknownDiseaseInDatabase_LeavesDiseaseIdAndPlantIdAsNull()
+    public async Task PredictAsync_UnknownDiseaseInDatabase_LeavesPlantIdAsNull()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
@@ -410,7 +417,6 @@ public class DiagnosisServiceTests
         Assert.Single(savedHistory.PredictionItems);
 
         var savedItem = savedHistory.PredictionItems.First();
-        Assert.Null(savedItem.DiseaseId);
         Assert.Equal("Unregistered Wild Fungus", savedItem.DetectedClass);
     }
 }

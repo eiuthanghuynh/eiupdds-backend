@@ -75,7 +75,6 @@ public class PredictionHistoryService : IPredictionHistoryService
         var history = await _dbContext.PredictionHistories
             .Include(h => h.Plant)
             .Include(h => h.PredictionItems)
-                .ThenInclude(i => i.Disease)
             .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId)
             ?? throw new KeyNotFoundException($"Diagnosis history with id '{id}' was not found.");
 
@@ -124,8 +123,6 @@ public class PredictionHistoryService : IPredictionHistoryService
                 .Select(i => new PredictionItemDto
                 {
                     Id = i.Id,
-                    DiseaseId = i.DiseaseId,
-                    DiseaseName = i.Disease?.Name,
                     DetectedClass = i.DetectedClass,
                     ClassId = i.ClassId,
                     Confidence = i.Confidence,

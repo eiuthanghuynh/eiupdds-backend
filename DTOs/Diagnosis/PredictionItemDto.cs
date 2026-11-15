@@ -5,8 +5,7 @@ public class PredictionItemDto
     private string? _class;
 
     public int Id { get; set; }
-    public int? DiseaseId { get; set; }
-    public string? DiseaseName { get; set; }
+    public int ClassId { get; set; }
     public string DetectedClass { get; set; } = string.Empty;
 
     public string Class
@@ -22,7 +21,6 @@ public class PredictionItemDto
         }
     }
 
-    public int ClassId { get; set; }
     public double Confidence { get; set; }
     public double X { get; set; }
     public double Y { get; set; }

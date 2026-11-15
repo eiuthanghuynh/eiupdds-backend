@@ -73,11 +73,13 @@ public class DiagnosisService : IDiagnosisService
 
             var diseases = detectedLabels.Count > 0 || detectedClassIds.Count > 0
                 ? await _context.Diseases
+                    .Include(d => d.Plant)
                     .Where(d => detectedLabels.Contains(d.RoboflowLabel) || detectedClassIds.Contains(d.RoboflowClassId))
                     .ToListAsync()
                 : new List<Disease>();
 
             int? matchedPlantId = null;
+            string? matchedPlantName = null;
             var predictionItems = new List<PredictionItem>();
 
             foreach (var item in predictions)
@@ -89,6 +91,7 @@ public class DiagnosisService : IDiagnosisService
                 if (matchedPlantId == null && matchedDisease != null)
                 {
                     matchedPlantId = matchedDisease.PlantId;
+                    matchedPlantName = matchedDisease.Plant?.Name;
                 }
 
                 predictionItems.Add(new PredictionItem
@@ -101,9 +104,21 @@ public class DiagnosisService : IDiagnosisService
                     Width = item.Width,
                     Height = item.Height,
                     DetectionId = item.DetectionId,
-                    DiseaseId = matchedDisease?.Id,
                     CreatedAt = DateTime.UtcNow
                 });
+            }
+
+            if (string.IsNullOrWhiteSpace(matchedPlantName) && matchedPlantId.HasValue)
+            {
+                matchedPlantName = await _context.Plants
+                    .Where(p => p.Id == matchedPlantId.Value)
+                    .Select(p => p.Name)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(matchedPlantName) && predictions.Count > 0)
+            {
+                matchedPlantName = ExtractPlantNameFromClassName(predictions[0].ClassName);
             }
 
             var history = new PredictionHistory
@@ -125,8 +140,12 @@ public class DiagnosisService : IDiagnosisService
             {
                 Id = history.Id,
                 ImageUrl = history.ImageUrl,
+                ImageWidth = history.ImageWidth,
+                ImageHeight = history.ImageHeight,
+                PlantName = matchedPlantName,
                 Predictions = history.PredictionItems.Select(p => new PredictionItemDto
                 {
+                    ClassId = p.ClassId,
                     Class = p.DetectedClass,
                     Confidence = p.Confidence,
                     X = p.X,
@@ -142,5 +161,37 @@ public class DiagnosisService : IDiagnosisService
             _logger.LogError(ex, "Failed to complete disease diagnosis for user {UserId}. Cleaned up uploaded file at {RelativeUrl}.", userId, relativeUrl);
             throw;
         }
+    }
+
+    private static string? ExtractPlantNameFromClassName(string? className)
+    {
+        if (string.IsNullOrWhiteSpace(className))
+        {
+            return null;
+        }
+
+        var normalized = className.Trim();
+        var knownPrefixes = new[]
+        {
+            "Apple", "Bell_pepper", "Pepper", "Blueberry", "Cherry",
+            "Corn", "Peach", "Potato", "Raspberry", "Soyabean",
+            "Soybean", "Squash", "Strawberry", "Tomato", "Grape"
+        };
+
+        foreach (var prefix in knownPrefixes)
+        {
+            if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return prefix switch
+                {
+                    "Bell_pepper" => "Pepper",
+                    "Soyabean" => "Soybean",
+                    _ => prefix
+                };
+            }
+        }
+
+        var firstWord = normalized.Split(' ', '_', '-')[0];
+        return char.ToUpperInvariant(firstWord[0]) + firstWord[1..];
     }
 }
