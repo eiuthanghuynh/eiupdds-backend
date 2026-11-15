@@ -98,9 +98,12 @@ builder.Services.AddSwaggerGen(options =>
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
     ?? builder.Configuration["JwtSettings:SecretKey"];
 
-var signingKeyBytes = !string.IsNullOrWhiteSpace(jwtSecret)
-    ? Encoding.UTF8.GetBytes(jwtSecret)
-    : Encoding.UTF8.GetBytes("DevelopmentFallbackSecretKeyMustBeAtLeast32BytesLong!");
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    throw new InvalidOperationException("JWT SecretKey is not configured. Please set the JWT_SECRET_KEY environment variable or define JwtSettings:SecretKey in appsettings.");
+}
+
+var signingKeyBytes = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
