@@ -7,8 +7,9 @@ namespace eiupdds_backend.DTOs.Roboflow;
 /// </summary>
 public class RoboflowWorkflowRequest
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("api_key")]
-    public string ApiKey { get; set; } = string.Empty;
+    public string? ApiKey { get; set; }
 
     [JsonPropertyName("inputs")]
     public RoboflowWorkflowInputs Inputs { get; set; } = new();

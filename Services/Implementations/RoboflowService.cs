@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using eiupdds_backend.DTOs.Roboflow;
@@ -46,7 +48,6 @@ public class RoboflowService : IRoboflowService
 
         var payload = new RoboflowWorkflowRequest
         {
-            ApiKey = apiKey,
             Inputs = new RoboflowWorkflowInputs
             {
                 Image = new RoboflowImageInput
@@ -63,13 +64,50 @@ public class RoboflowService : IRoboflowService
         var endpoint = $"{baseUrl.TrimEnd('/')}/{workspace}/workflows/{workflowId}";
 
         var jsonContent = JsonSerializer.Serialize(payload, JsonOptions);
-        using var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(endpoint, httpContent);
-        if (!response.IsSuccessStatusCode)
+        const int maxRetries = 2;
+        var retryDelay = TimeSpan.FromMilliseconds(500);
+        HttpResponseMessage? response = null;
+
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
-            _logger.LogError("Roboflow inference request failed with status {StatusCode} ({Reason})", response.StatusCode, response.ReasonPhrase);
-            response.EnsureSuccessStatusCode();
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                response = await _httpClient.SendAsync(request, cts.Token);
+
+                if (response.IsSuccessStatusCode || ((int)response.StatusCode < 500 && response.StatusCode != (HttpStatusCode)429))
+                {
+                    break;
+                }
+
+                _logger.LogWarning("Roboflow inference attempt {Attempt} returned status {StatusCode}. Retrying after {Delay}ms...",
+                    attempt + 1, response.StatusCode, retryDelay.TotalMilliseconds);
+            }
+            catch (Exception ex) when (attempt < maxRetries && (ex is HttpRequestException || ex is TaskCanceledException))
+            {
+                _logger.LogWarning(ex, "Roboflow inference attempt {Attempt} failed due to network/timeout. Retrying after {Delay}ms...",
+                    attempt + 1, retryDelay.TotalMilliseconds);
+            }
+
+            if (attempt < maxRetries)
+            {
+                await Task.Delay(retryDelay);
+                retryDelay *= 2;
+            }
+        }
+
+        if (response == null || !response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Roboflow inference request failed with status {StatusCode} ({Reason})", response?.StatusCode, response?.ReasonPhrase);
+            response?.EnsureSuccessStatusCode();
+            throw new HttpRequestException("Roboflow inference request failed with no response.");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync();
