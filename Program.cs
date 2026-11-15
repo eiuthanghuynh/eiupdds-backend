@@ -111,12 +111,13 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.Migrate();
         DatabaseSeeder.SeedCatalog(dbContext);
     }
 }
 catch (Exception ex)
 {
-    Log.Warning(ex, "Catalog seed was skipped because the database is not available.");
+    Log.Warning(ex, "Database migration or catalog seed was skipped because the database server is not reachable.");
 }
 
 try
