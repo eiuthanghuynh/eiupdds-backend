@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using dotenv.net;
 using eiupdds_backend.Data;
 using eiupdds_backend.Middlewares;
@@ -7,6 +9,7 @@ using eiupdds_backend.Services.Implementations;
 using eiupdds_backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -35,6 +38,38 @@ builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>(
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Rate limiting policy for diagnosis predictions
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("PredictRateLimit", httpContext =>
+    {
+        var partitionKey = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            statusCode = StatusCodes.Status429TooManyRequests,
+            message = "Too many diagnosis requests. Please wait a minute before trying again.",
+            timestamp = DateTime.UtcNow
+        }, cancellationToken: token);
+    };
 });
 
 builder.Services.AddControllers();
@@ -103,6 +138,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 

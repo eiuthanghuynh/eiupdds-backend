@@ -4,6 +4,7 @@ using eiupdds_backend.DTOs.Diagnosis;
 using eiupdds_backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eiupdds_backend.Controllers;
 
@@ -30,6 +31,7 @@ public class DiagnosisController : BaseApiController
     /// <param name="file">Uploaded image of a plant leaf.</param>
     /// <returns>Prediction results including bounding box locations and identified disease classes.</returns>
     [HttpPost("predict")]
+    [EnableRateLimiting("PredictRateLimit")]
     public async Task<ActionResult<PredictionResponseDto>> Predict(IFormFile file)
     {
         var userId = GetCurrentUserId();
