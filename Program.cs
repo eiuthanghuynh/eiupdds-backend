@@ -30,6 +30,8 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
+builder.Services.AddScoped<IDiseaseService, DiseaseService>();
+builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>();
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
@@ -103,6 +105,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        DatabaseSeeder.SeedCatalog(dbContext);
+    }
+}
+catch (Exception ex)
+{
+    Log.Warning(ex, "Catalog seed was skipped because the database is not available.");
+}
 
 try
 {
