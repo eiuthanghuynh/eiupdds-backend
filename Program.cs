@@ -23,6 +23,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
+// Configure In-memory Cache
+builder.Services.AddMemoryCache();
+
 // Configure Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -36,6 +39,7 @@ builder.Services.AddScoped<IUserActiveGuard, UserActiveGuard>();
 builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
 builder.Services.AddScoped<IDiseaseService, DiseaseService>();
 builder.Services.AddScoped<IPredictionHistoryService, PredictionHistoryService>();
+builder.Services.AddScoped<IPlantService, PlantService>();
 builder.Services.AddHttpClient<IRoboflowService, RoboflowService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
