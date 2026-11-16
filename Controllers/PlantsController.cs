@@ -30,7 +30,7 @@ public class PlantsController : BaseApiController
 
     [HttpGet("{id:int}")]
     [AllowAnonymous]
-    public async Task<ActionResult<PlantDto>> GetPlantById(int id)
+    public async Task<ActionResult<PlantDetailDto>> GetPlantById(int id)
     {
         var plant = await _plantService.GetByIdAsync(id);
         return Ok(plant);

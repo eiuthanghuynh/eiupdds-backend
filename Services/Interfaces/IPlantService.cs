@@ -12,7 +12,7 @@ public interface IPlantService
         string? sortBy,
         bool isDescending);
 
-    Task<PlantDto> GetByIdAsync(int id);
+    Task<PlantDetailDto> GetByIdAsync(int id);
     Task<PlantDto> CreateAsync(CreatePlantDto request);
     Task<PlantDto> UpdateAsync(int id, UpdatePlantDto request);
     Task SoftDeleteAsync(int id);
