@@ -1,6 +1,6 @@
-﻿namespace eiupdds_backend.DTOs.Plants;
+namespace eiupdds_backend.DTOs.Plants;
 
-public class PlantResponseDto
+public class PlantDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

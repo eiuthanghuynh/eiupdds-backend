@@ -23,7 +23,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-// Configure In-memory Cache
 builder.Services.AddMemoryCache();
 
 // Configure Database Context
