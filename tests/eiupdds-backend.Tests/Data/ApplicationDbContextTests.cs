@@ -1,5 +1,6 @@
 using eiupdds_backend.Data;
 using eiupdds_backend.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -110,5 +111,31 @@ public class ApplicationDbContextTests
 
         var diseaseEntity = model.FindEntityType(typeof(Disease));
         Assert.NotEmpty(diseaseEntity?.GetDeclaredQueryFilters() ?? []);
+    }
+
+    [Fact]
+    public void SeedAdmin_ShouldCreateDefaultAdminWithHashedPasswordAndBeIdempotent()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase($"seed-admin-tests-{Guid.NewGuid()}")
+            .Options;
+
+        using var context = new ApplicationDbContext(options);
+        var passwordHasher = new PasswordHasher<ApplicationUser>();
+
+        DatabaseSeeder.SeedAdmin(context, passwordHasher);
+        DatabaseSeeder.SeedAdmin(context, passwordHasher);
+
+        var admins = context.Users.IgnoreQueryFilters().Where(u => u.Email == "admin@eiu.edu.vn").ToList();
+        Assert.Single(admins);
+
+        var admin = admins[0];
+        Assert.Equal("Admin", admin.FullName);
+        Assert.Equal("Admin", admin.Role);
+        Assert.True(admin.IsActive);
+        Assert.NotEqual("123456", admin.PasswordHash);
+        Assert.NotEqual(
+            PasswordVerificationResult.Failed,
+            passwordHasher.VerifyHashedPassword(admin, admin.PasswordHash, "123456"));
     }
 }
