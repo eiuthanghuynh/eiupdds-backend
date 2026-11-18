@@ -91,6 +91,33 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_WhenEmailBelongsToSoftDeletedUser_ShouldThrowArgumentException()
+    {
+        using var context = CreateInMemoryDbContext();
+        context.Users.Add(new ApplicationUser
+        {
+            Id = "deleted-user",
+            Email = "deleted@example.com",
+            FullName = "Deleted User",
+            PasswordHash = "hash",
+            IsActive = false,
+            DeletedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var authService = new AuthService(context, _passwordHasher, _configuration);
+
+        var request = new RegisterRequestDto
+        {
+            FullName = "Reused Email User",
+            Email = "deleted@example.com",
+            Password = "Password123!"
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => authService.RegisterAsync(request));
+    }
+
+    [Fact]
     public async Task LoginAsync_WhenCredentialsAreValid_ShouldReturnAuthResponse()
     {
         using var context = CreateInMemoryDbContext();

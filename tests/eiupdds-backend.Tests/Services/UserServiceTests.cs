@@ -132,6 +132,7 @@ public class UserServiceTests
         Assert.NotNull(deactivatedUser);
         Assert.False(deactivatedUser.IsActive);
         Assert.NotNull(deactivatedUser.DeletedAt);
+        Assert.NotNull(deactivatedUser.UpdatedAt);
     }
 
     [Fact]
