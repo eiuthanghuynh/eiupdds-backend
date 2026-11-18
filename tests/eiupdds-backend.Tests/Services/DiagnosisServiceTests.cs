@@ -81,6 +81,9 @@ public class DiagnosisServiceTests
         _fileUploadServiceMock
             .Setup(s => s.UploadImageAsync(fileMock.Object))
             .ReturnsAsync(relativeUrl);
+        _fileUploadServiceMock
+            .Setup(s => s.AnnotateImage(relativeUrl, It.IsAny<IReadOnlyList<PredictionItem>>()))
+            .Returns("/outputs/test-image-result.jpg");
 
         var roboflowOutput = new RoboflowModelOutput
         {
@@ -112,6 +115,7 @@ public class DiagnosisServiceTests
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(relativeUrl, result.ImageUrl);
+        Assert.Equal("/outputs/test-image-result.jpg", result.AnnotatedImageUrl);
         Assert.Single(result.Predictions);
 
         Assert.Equal(1024, result.ImageWidth);
@@ -176,6 +180,7 @@ public class DiagnosisServiceTests
 
         // Verify cleanup was invoked exactly once for the uploaded file
         _fileUploadServiceMock.Verify(s => s.DeleteImage(uploadedPath), Times.Once);
+        _fileUploadServiceMock.Verify(s => s.DeleteImage("/outputs/temp-to-fail-result.jpg"), Times.Once);
 
         // Verify no history or items were saved in database
         Assert.Empty(dbContext.PredictionHistories);
@@ -256,6 +261,9 @@ public class DiagnosisServiceTests
         _fileUploadServiceMock
             .Setup(s => s.UploadImageAsync(fileMock.Object))
             .ReturnsAsync(relativeUrl);
+        _fileUploadServiceMock
+            .Setup(s => s.AnnotateImage(relativeUrl, It.IsAny<IReadOnlyList<PredictionItem>>()))
+            .Returns("/outputs/test-image-result.jpg");
 
         var roboflowOutput = new RoboflowModelOutput
         {
@@ -315,6 +323,9 @@ public class DiagnosisServiceTests
         _fileUploadServiceMock
             .Setup(s => s.UploadImageAsync(fileMock.Object))
             .ReturnsAsync(relativeUrl);
+        _fileUploadServiceMock
+            .Setup(s => s.AnnotateImage(relativeUrl, It.IsAny<IReadOnlyList<PredictionItem>>()))
+            .Returns("/outputs/test-image-result.jpg");
 
         var roboflowOutput = new RoboflowModelOutput
         {
@@ -381,6 +392,9 @@ public class DiagnosisServiceTests
         _fileUploadServiceMock
             .Setup(s => s.UploadImageAsync(fileMock.Object))
             .ReturnsAsync(relativeUrl);
+        _fileUploadServiceMock
+            .Setup(s => s.AnnotateImage(relativeUrl, It.IsAny<IReadOnlyList<PredictionItem>>()))
+            .Returns("/outputs/test-image-result.jpg");
 
         var roboflowOutput = new RoboflowModelOutput
         {
