@@ -82,8 +82,10 @@ public class UserService : IUserService
             }
         }
 
+        var now = DateTime.UtcNow;
         user.IsActive = false;
-        user.DeletedAt = DateTime.UtcNow;
+        user.DeletedAt = now;
+        user.UpdatedAt = now;
 
         await _context.SaveChangesAsync();
         return true;

@@ -1,7 +1,9 @@
 using eiupdds_backend.Data;
 using eiupdds_backend.Models;
 using eiupdds_backend.Services.Implementations;
+using eiupdds_backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace eiupdds_backend.Tests.Services;
@@ -70,7 +72,7 @@ public class PredictionHistoryServiceTests
             });
         await context.SaveChangesAsync();
 
-        var service = new PredictionHistoryService(context);
+        var service = new PredictionHistoryService(context, new Mock<IFileUploadService>().Object);
 
         var result = await service.GetHistoryAsync(
             currentUserId,

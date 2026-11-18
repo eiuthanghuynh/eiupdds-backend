@@ -109,7 +109,9 @@ public static class DatabaseSeeder
 
     private static int EnsurePlant(ApplicationDbContext dbContext, string name)
     {
-        var plant = dbContext.Plants.FirstOrDefault(p => p.Name == name);
+        var plant = dbContext.Plants
+            .IgnoreQueryFilters()
+            .FirstOrDefault(p => p.Name == name);
         if (plant is not null)
         {
             return plant.Id;
@@ -136,14 +138,20 @@ public static class DatabaseSeeder
         string description,
         DateTime timestamp)
     {
-        var existing = dbContext.Diseases.FirstOrDefault(d => d.RoboflowClassId == roboflowClassId);
+        var existing = dbContext.Diseases
+            .IgnoreQueryFilters()
+            .FirstOrDefault(d => d.RoboflowClassId == roboflowClassId);
         if (existing is not null)
         {
+            if (!existing.IsActive)
+            {
+                return;
+            }
+
             existing.PlantId = plantId;
             existing.Name = name;
             existing.RoboflowLabel = roboflowLabel;
             existing.Description = description;
-            existing.IsActive = true;
             existing.UpdatedAt = timestamp;
         }
         else
