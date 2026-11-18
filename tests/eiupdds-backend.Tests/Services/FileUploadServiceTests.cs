@@ -1,9 +1,11 @@
 using System.Text;
+using eiupdds_backend.Models;
 using eiupdds_backend.Services.Implementations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SkiaSharp;
 using Xunit;
 
 namespace eiupdds_backend.Tests.Services;
@@ -69,6 +71,76 @@ public class FileUploadServiceTests : IDisposable
         Assert.True(deleted);
         var savedPath = Path.Combine(_tempRoot, relativeUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
         Assert.False(File.Exists(savedPath));
+    }
+
+    [Fact]
+    public async Task AnnotateImage_WithPredictionsAndEdgeBoxes_CreatesAnnotatedOutputAndDeletesCleanly()
+    {
+        var imageBytes = CreateJpegBytes(400, 300);
+        var formFile = CreateFormFile("potato-leaf.jpg", "image/jpeg", imageBytes);
+        var relativeUploadUrl = await _service.UploadImageAsync(formFile);
+
+        var predictions = new List<PredictionItem>
+        {
+            new()
+            {
+                DetectedClass = "Potato leaf late blight",
+                ClassId = 13,
+                Confidence = 0.87,
+                X = 100,
+                Y = 20,
+                Width = 120,
+                Height = 60
+            },
+            new()
+            {
+                DetectedClass = "Potato leaf healthy",
+                ClassId = 11,
+                Confidence = 0.94,
+                X = 280,
+                Y = 180,
+                Width = 100,
+                Height = 90
+            }
+        };
+
+        var annotatedUrl = _service.AnnotateImage(relativeUploadUrl, predictions);
+
+        Assert.StartsWith("/outputs/", annotatedUrl);
+        Assert.EndsWith("-result.jpg", annotatedUrl);
+
+        var outputPhysicalPath = Path.Combine(_tempRoot, annotatedUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(outputPhysicalPath));
+
+        using var decoded = SKBitmap.Decode(outputPhysicalPath);
+        Assert.NotNull(decoded);
+        Assert.Equal(400, decoded.Width);
+        Assert.Equal(300, decoded.Height);
+
+        Assert.True(_service.DeleteImage(annotatedUrl));
+        Assert.False(File.Exists(outputPhysicalPath));
+    }
+
+    [Fact]
+    public async Task AnnotateImage_WhenNoPredictions_StillCreatesOutputImage()
+    {
+        var imageBytes = CreateJpegBytes(200, 150);
+        var formFile = CreateFormFile("empty-leaf.jpg", "image/jpeg", imageBytes);
+        var relativeUploadUrl = await _service.UploadImageAsync(formFile);
+
+        var annotatedUrl = _service.AnnotateImage(relativeUploadUrl, []);
+
+        var outputPhysicalPath = Path.Combine(_tempRoot, annotatedUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(outputPhysicalPath));
+    }
+
+    private static byte[] CreateJpegBytes(int width, int height)
+    {
+        using var surface = SKSurface.Create(new SKImageInfo(width, height));
+        surface.Canvas.Clear(new SKColor(34, 85, 51));
+        using var image = surface.Snapshot();
+        using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
+        return data.ToArray();
     }
 
     private static IFormFile CreateFormFile(string fileName, string contentType, byte[] content)

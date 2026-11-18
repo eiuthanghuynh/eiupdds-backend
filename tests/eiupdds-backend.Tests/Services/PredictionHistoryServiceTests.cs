@@ -140,11 +140,13 @@ public class PredictionHistoryServiceTests
 
         var detail = await service.GetByIdAsync(history.Id, "owner-user");
         Assert.Equal(history.Id, detail.Id);
+        Assert.Equal("/outputs/owner-leaf-result.jpg", detail.AnnotatedImageUrl);
 
         await service.DeleteAsync(history.Id, "owner-user");
 
         Assert.Empty(context.PredictionHistories);
         fileUploadMock.Verify(s => s.DeleteImage("/uploads/owner-leaf.jpg"), Times.Once);
+        fileUploadMock.Verify(s => s.DeleteImage("/outputs/owner-leaf-result.jpg"), Times.Once);
     }
 
     private static ApplicationDbContext CreateContext()
