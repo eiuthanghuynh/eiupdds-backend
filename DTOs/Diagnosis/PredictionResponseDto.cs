@@ -7,6 +7,7 @@ public class PredictionResponseDto
 {
     public int Id { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
+    public string? AnnotatedImageUrl { get; set; }
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
     public string? PlantName { get; set; }

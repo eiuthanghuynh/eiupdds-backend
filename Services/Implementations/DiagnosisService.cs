@@ -121,6 +121,8 @@ public class DiagnosisService : IDiagnosisService
                 matchedPlantName = ExtractPlantNameFromClassName(predictions[0].ClassName);
             }
 
+            var annotatedUrl = _fileUploadService.AnnotateImage(relativeUrl, predictionItems);
+
             var history = new PredictionHistory
             {
                 UserId = userId,
@@ -140,6 +142,7 @@ public class DiagnosisService : IDiagnosisService
             {
                 Id = history.Id,
                 ImageUrl = history.ImageUrl,
+                AnnotatedImageUrl = annotatedUrl,
                 ImageWidth = history.ImageWidth,
                 ImageHeight = history.ImageHeight,
                 PlantName = matchedPlantName,
@@ -160,6 +163,7 @@ public class DiagnosisService : IDiagnosisService
         catch (Exception ex)
         {
             _fileUploadService.DeleteImage(relativeUrl);
+            _fileUploadService.DeleteImage(FileUploadService.GetAnnotatedRelativeUrl(relativeUrl));
             _logger.LogError(ex, "Failed to complete disease diagnosis for user {UserId}. Cleaned up uploaded file at {RelativeUrl}.", userId, relativeUrl);
             throw;
         }

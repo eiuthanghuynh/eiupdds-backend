@@ -102,6 +102,7 @@ public class PredictionHistoryService : IPredictionHistoryService
         await _dbContext.SaveChangesAsync();
 
         _fileUploadService.DeleteImage(imageUrl);
+        _fileUploadService.DeleteImage(FileUploadService.GetAnnotatedRelativeUrl(imageUrl));
     }
 
     private static DiagnosisHistoryListItemDto MapToListItem(PredictionHistory history)
@@ -127,6 +128,9 @@ public class PredictionHistoryService : IPredictionHistoryService
             PlantId = history.PlantId,
             PlantName = history.Plant?.Name,
             ImageUrl = history.ImageUrl,
+            AnnotatedImageUrl = string.IsNullOrWhiteSpace(history.ImageUrl)
+                ? null
+                : FileUploadService.GetAnnotatedRelativeUrl(history.ImageUrl),
             ImageWidth = history.ImageWidth,
             ImageHeight = history.ImageHeight,
             RawResponse = history.RawResponse,
