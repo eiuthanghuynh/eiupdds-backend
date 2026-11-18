@@ -145,13 +145,15 @@ public class DiagnosisService : IDiagnosisService
                 PlantName = matchedPlantName,
                 Predictions = history.PredictionItems.Select(p => new PredictionItemDto
                 {
+                    Id = p.Id,
                     ClassId = p.ClassId,
                     Class = p.DetectedClass,
                     Confidence = p.Confidence,
                     X = p.X,
                     Y = p.Y,
                     Width = p.Width,
-                    Height = p.Height
+                    Height = p.Height,
+                    DetectionId = p.DetectionId
                 }).ToList()
             };
         }

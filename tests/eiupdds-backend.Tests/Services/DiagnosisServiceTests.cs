@@ -119,6 +119,7 @@ public class DiagnosisServiceTests
         Assert.Equal("Tomato", result.PlantName);
 
         var itemDto = result.Predictions[0];
+        Assert.True(itemDto.Id > 0);
         Assert.Equal(1, itemDto.ClassId);
         Assert.Equal("Tomato Early Blight", itemDto.Class);
         Assert.Equal(0.88, itemDto.Confidence);
@@ -126,6 +127,7 @@ public class DiagnosisServiceTests
         Assert.Equal(200.0, itemDto.Y);
         Assert.Equal(80.0, itemDto.Width);
         Assert.Equal(90.0, itemDto.Height);
+        Assert.Equal("det-001", itemDto.DetectionId);
 
         // Assert - Database persistence
         var savedHistory = await dbContext.PredictionHistories

@@ -10,10 +10,12 @@ namespace eiupdds_backend.Services.Implementations;
 public class PredictionHistoryService : IPredictionHistoryService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFileUploadService _fileUploadService;
 
-    public PredictionHistoryService(ApplicationDbContext dbContext)
+    public PredictionHistoryService(ApplicationDbContext dbContext, IFileUploadService fileUploadService)
     {
         _dbContext = dbContext;
+        _fileUploadService = fileUploadService;
     }
 
     public async Task<PagedResultDto<DiagnosisHistoryListItemDto>> GetHistoryAsync(
@@ -51,7 +53,15 @@ public class PredictionHistoryService : IPredictionHistoryService
 
         if (toDate.HasValue)
         {
-            query = query.Where(h => h.CreatedAt <= toDate.Value);
+            if (toDate.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                var exclusiveEnd = toDate.Value.Date.AddDays(1);
+                query = query.Where(h => h.CreatedAt < exclusiveEnd);
+            }
+            else
+            {
+                query = query.Where(h => h.CreatedAt <= toDate.Value);
+            }
         }
 
         var totalCount = await query.CountAsync();
@@ -87,8 +97,11 @@ public class PredictionHistoryService : IPredictionHistoryService
             .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId)
             ?? throw new KeyNotFoundException($"Diagnosis history with id '{id}' was not found.");
 
+        var imageUrl = history.ImageUrl;
         _dbContext.PredictionHistories.Remove(history);
         await _dbContext.SaveChangesAsync();
+
+        _fileUploadService.DeleteImage(imageUrl);
     }
 
     private static DiagnosisHistoryListItemDto MapToListItem(PredictionHistory history)

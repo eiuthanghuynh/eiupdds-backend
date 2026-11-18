@@ -138,4 +138,34 @@ public class ApplicationDbContextTests
             PasswordVerificationResult.Failed,
             passwordHasher.VerifyHashedPassword(admin, admin.PasswordHash, "123456"));
     }
+
+    [Fact]
+    public void SeedCatalog_WhenSeededPlantOrDiseaseSoftDeleted_ShouldNotDuplicateOrReactivate()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase($"seed-catalog-tests-{Guid.NewGuid()}")
+            .Options;
+
+        using var context = new ApplicationDbContext(options);
+
+        DatabaseSeeder.SeedCatalog(context);
+
+        var apple = context.Plants.IgnoreQueryFilters().First(p => p.Name == "Apple");
+        var appleScab = context.Diseases.IgnoreQueryFilters().First(d => d.RoboflowClassId == 0);
+        apple.IsActive = false;
+        apple.DeletedAt = DateTime.UtcNow;
+        appleScab.IsActive = false;
+        appleScab.DeletedAt = DateTime.UtcNow;
+        context.SaveChanges();
+
+        DatabaseSeeder.SeedCatalog(context);
+
+        var apples = context.Plants.IgnoreQueryFilters().Where(p => p.Name == "Apple").ToList();
+        var scabs = context.Diseases.IgnoreQueryFilters().Where(d => d.RoboflowClassId == 0).ToList();
+
+        Assert.Single(apples);
+        Assert.False(apples[0].IsActive);
+        Assert.Single(scabs);
+        Assert.False(scabs[0].IsActive);
+    }
 }

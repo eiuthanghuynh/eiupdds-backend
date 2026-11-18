@@ -46,7 +46,9 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
     {
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var existingUser = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
         if (existingUser != null)
         {
             throw new ArgumentException("Email is already registered.");
