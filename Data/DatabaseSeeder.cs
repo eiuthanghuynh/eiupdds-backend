@@ -1,10 +1,35 @@
 using eiupdds_backend.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eiupdds_backend.Data;
 
 public static class DatabaseSeeder
 {
+    public static void SeedAdmin(ApplicationDbContext dbContext, IPasswordHasher<ApplicationUser> passwordHasher)
+    {
+        const string adminEmail = "admin@eiu.edu.vn";
+        if (dbContext.Users.IgnoreQueryFilters().Any(u => u.Email == adminEmail))
+        {
+            return;
+        }
+
+        var admin = new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            FullName = "Admin",
+            Email = adminEmail,
+            Role = "Admin",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        admin.PasswordHash = passwordHasher.HashPassword(admin, "123456");
+
+        dbContext.Users.Add(admin);
+        dbContext.SaveChanges();
+    }
+
     public static void SeedCatalog(ApplicationDbContext dbContext)
     {
         var appleId = EnsurePlant(dbContext, "Apple");

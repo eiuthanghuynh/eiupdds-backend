@@ -157,8 +157,10 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<ApplicationUser>>();
         dbContext.Database.Migrate();
         DatabaseSeeder.SeedCatalog(dbContext);
+        DatabaseSeeder.SeedAdmin(dbContext, passwordHasher);
     }
 }
 catch (Exception ex)
