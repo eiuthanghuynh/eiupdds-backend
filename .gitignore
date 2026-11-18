@@ -20,5 +20,7 @@ logs/
 !.env.example
 wwwroot/uploads/*
 !wwwroot/uploads/.gitkeep
+wwwroot/outputs/*
+!wwwroot/outputs/.gitkeep
 .DS_Store
 Thumbs.db
